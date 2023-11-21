@@ -1,7 +1,5 @@
 # [HOW TO] AWS AI 서비스들을 활용한 국내 헬스케어 비정형 데이터의 정형화
 
-### 데모 링크: https://github.com/ltrain81/korean-emrdata-aws-demo/tree/master
-
 ## 주의: 본 데모에 포함된 데이터는 모두 직접 작성 및 녹음된 가상의 데이터입니다. 본 데모를 활용 시 실제 의료 데이터를 사용하고자 할 때는, 반드시 개인정보 및 관련 국내법 등을 준수하여 사용하세요. 
 
 본 데모는 Amazon Bedrock의 Claude v2 모델과 Amazon Transcribe를 통해 비정형 의료 데이터, 그 중에서도 음성 및 텍스트를 간단하게 정형화할 수 있음을 제안합니다. 
