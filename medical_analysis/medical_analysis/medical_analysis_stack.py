@@ -59,7 +59,6 @@ class MedicalAnalysisStack(Stack):
             master_user_password=opensearch_password.secret_value
         )
 
-        '''
         #Configure Opensearch
         OPENSEARCH_VERSION = "2.11"
 
@@ -69,10 +68,16 @@ class MedicalAnalysisStack(Stack):
 
         capacity_config = opensearch.CapacityConfig(
             master_nodes=3,
-            master_node_instance_type="m4.large.search",
+            master_node_instance_type="r6g.large.search",
             data_nodes=3,
-            data_node_instance_type="m4.large.search",
-            warm_nodes=0
+            data_node_instance_type="m6g.large.search"
+        )
+
+        opensearch_access_policy = iam.PolicyStatement(
+            effect=iam.Effect.ALLOW,
+            principals=[iam.AnyPrincipal()],
+            actions=["es:ESHttp*"],
+            resources=[]
         )
 
         zone_awareness_config = opensearch.ZoneAwarenessConfig(
@@ -82,7 +87,7 @@ class MedicalAnalysisStack(Stack):
 
         ebs_config = opensearch.EbsOptions(
             volume_size=10,
-            volume_type=aws_cdk.aws_ec2.EbsDeviceVolumeType.GP2
+            volume_type=aws_cdk.aws_ec2.EbsDeviceVolumeType.GP3
         )
 
         medical_opensearch = opensearch.Domain(
@@ -90,6 +95,7 @@ class MedicalAnalysisStack(Stack):
             version=opensearch.EngineVersion.open_search(OPENSEARCH_VERSION),
             node_to_node_encryption=True,
             capacity=capacity_config,
+            access_policies=[opensearch_access_policy],
             ebs=ebs_config,
             enforce_https=True,
             encryption_at_rest=encryption_config,
@@ -103,7 +109,6 @@ class MedicalAnalysisStack(Stack):
         aws_cdk.CfnOutput(self,"OpenSearchDashboardsURL", value=(medical_opensearch.domain_endpoint + "/_dashboards"))
         aws_cdk.CfnOutput(self,"OpenSearchPasswordSecretName", value=opensearch_password.secret_name)
         aws_cdk.CfnOutput(self,"OpenSearchAdminUser", value=opensearch_username)
-        '''
 
         #dynamoDB table Build
         medical_table = dynamodb.Table(
@@ -112,7 +117,8 @@ class MedicalAnalysisStack(Stack):
             partition_key=dynamodb.Attribute(
                 name="DiagnosisID",
                 type=dynamodb.AttributeType.STRING
-            )
+            ),
+            stream=dynamodb.StreamViewType.NEW_IMAGE
         )
 
         #Lambda Layers 
@@ -157,21 +163,23 @@ class MedicalAnalysisStack(Stack):
             role_name="MedicalBedrockRole",
         )
 
-        ''''
+  
         ddb_to_opensearch_role = iam.Role(
             self, "DDBtoOpensearchRole",
             assumed_by=iam.ServicePrincipal("lambda.amazonaws.com"),
             role_name="DDBtoOpensearchRole",
         )
-        '''
+
         audio_to_transcribe_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('AmazonS3FullAccess'))
         audio_to_transcribe_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('AmazonTranscribeFullAccess'))
         audio_to_transcribe_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('CloudWatchLogsFullAccess'))
         transcript_to_txt_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('CloudWatchLogsFullAccess'))
         transcript_to_txt_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('AmazonS3FullAccess'))
         medical_bedrock_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('AdministratorAccess'))
-        #ddb_to_opensearch_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('AmazonOpenSearchServiceFullAccess'))
-        #ddb_to_opensearch_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('CloudWatchLogsFullAccess'))
+        ddb_to_opensearch_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('AmazonOpenSearchServiceFullAccess'))
+        ddb_to_opensearch_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('CloudWatchLogsFullAccess'))
+        ddb_to_opensearch_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('AmazonDynamoDBFullAccess'))
+        ddb_to_opensearch_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('SecretsManagerReadWrite'))
 
         #4 Lambda Functions
         audio_to_transcribe_code_path = "./lambda"
@@ -181,7 +189,8 @@ class MedicalAnalysisStack(Stack):
             handler="AudioToTranscribe.lambda_handler",
             code=_lambda.Code.from_asset(audio_to_transcribe_code_path),
             role=audio_to_transcribe_role,
-            timeout=aws_cdk.Duration.minutes(3)
+            timeout=aws_cdk.Duration.minutes(3),
+            function_name="AudioToTranscribe"
         )
 
         # Create Lambda function for TranscriptToTxt
@@ -193,6 +202,7 @@ class MedicalAnalysisStack(Stack):
             code=_lambda.Code.from_asset(transcript_to_txt_lambda_code_path),  # Replace with your path
             timeout=aws_cdk.Duration.minutes(3),
             role=transcript_to_txt_role,  # Assign the previously defined IAM role
+            function_name="TranscripttoTxt"
         )
 
         medical_bedrock_path = "./lambda"
@@ -203,26 +213,27 @@ class MedicalAnalysisStack(Stack):
             code=_lambda.Code.from_asset(medical_bedrock_path),  # Replace with your path
             timeout=aws_cdk.Duration.minutes(3),
             role=medical_bedrock_role,  # Assign the previously defined IAM role
-            layers=[boto3_mylayer]
+            layers=[boto3_mylayer],
+            function_name="MedicaltoBedrock"
         )
 
-        ''''
         ddb_to_opensearch_path = "./lambda"
         ddb_to_opensearch_lambda = _lambda.Function(
             self, "DDBtoOpensearch",
-            runtime=_lambda.Runtime.PYTHON_3_9,
-            handler="index.handler",
+            runtime=_lambda.Runtime.PYTHON_3_7,
+            handler="DDBtoOpensearch.lambda_handler",
             code=_lambda.Code.from_asset(ddb_to_opensearch_path),  # Replace with your path
             timeout=aws_cdk.Duration.minutes(3),
             role=ddb_to_opensearch_role,  # Assign the previously defined IAM role
             environment={
                 "Opensearch_Username": "admin",
                 "Opensearch_URL": opensearchURL,
-                "Opensearch_Password": str(opensearch_password.secret_value)
+                "secretName": opensearch_password.secret_name
             },
-            layers=[requests_layer]
+            layers=[requests_layer],
+            function_name="DDBtoOpensearch"
         )
-        '''
+
         #S3 Event Notifications + DDB Stream
         rawaudio_notice = medicalbucket.add_event_notification(s3.EventType.OBJECT_CREATED, s3n.LambdaDestination(audio_to_transcribe_lambda),s3.NotificationKeyFilter(prefix="audioEMR/raw-audio/"))
         transcript_to_txt_notice = medicalbucket.add_event_notification(s3.EventType.OBJECT_CREATED, s3n.LambdaDestination(transcript_to_txt_lambda), s3.NotificationKeyFilter(prefix="audioEMR/transcribe-output/"))
@@ -231,6 +242,14 @@ class MedicalAnalysisStack(Stack):
 
         #DDB Stream to Put Later
         # ***PUT DDB Stream here
+        ddb_to_opensearch_stream = _lambda.CfnEventSourceMapping(
+            scope=self,
+            id="ddb_to_opensearch",
+            function_name=ddb_to_opensearch_lambda.function_name,
+            event_source_arn=medical_table.table_stream_arn,
+            maximum_batching_window_in_seconds=1,
+            starting_position="LATEST"
+        )
 
 def main():    
     app = App()

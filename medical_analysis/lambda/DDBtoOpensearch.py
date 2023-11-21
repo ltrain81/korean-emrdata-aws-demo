@@ -1,10 +1,12 @@
 import json
 import requests
 import os
+import boto3
 
 def lambda_handler(event, context):
     if "NewImage" in event["Records"][0]['dynamodb']:
         item = event["Records"][0]['dynamodb']['NewImage']
+        secret = boto3.client('secretsmanager')
         
         # Extracting data from DynamoDB NewImage
         result = {}
@@ -16,15 +18,22 @@ def lambda_handler(event, context):
         document = {
             "data": result  # Assuming you want to nest the DynamoDB data under a 'data' field
         }
-        
-        opensearch_url = os.environ['Opensearch_URL']
+
+        opensearch_url = 'https://' + os.environ['Opensearch_URL']
         index_name = "patients"
         datatype = "_doc"
         url = f"{opensearch_url}/{index_name}/{datatype}"
         headers = { "Content-Type": "application/json" }
         
         user = os.environ['Opensearch_Username']
-        password = os.environ['Opensearch_Password']
+        secretName = os.environ['secretName']
+        print(secretName)
+        
+        password_response = secret.get_secret_value(
+            SecretId=secretName
+        )
+
+        password = password_response['SecretString']
         
         auth = requests.auth.HTTPBasicAuth(user, password)
         
