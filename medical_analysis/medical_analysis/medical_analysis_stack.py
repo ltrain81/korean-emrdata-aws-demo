@@ -9,7 +9,8 @@ from aws_cdk import (
     aws_s3_notifications as s3event,
     aws_s3_deployment as s3deploy,
     aws_iam as iam,
-    Duration
+    Duration,
+    aws_s3_notifications as s3n
 )
 from constructs import Construct
 import aws_cdk
@@ -107,6 +108,7 @@ class MedicalAnalysisStack(Stack):
         #dynamoDB table Build
         medical_table = dynamodb.Table(
             self, "MedicalTable",
+            table_name="MedicalTable",
             partition_key=dynamodb.Attribute(
                 name="DiagnosisID",
                 type=dynamodb.AttributeType.STRING
@@ -172,32 +174,32 @@ class MedicalAnalysisStack(Stack):
         #ddb_to_opensearch_role.add_managed_policy(iam.ManagedPolicy.from_aws_managed_policy_name('CloudWatchLogsFullAccess'))
 
         #4 Lambda Functions
-        audio_to_transcribe_code_path = "./lambda/AudioToTranscribe.zip"
+        audio_to_transcribe_code_path = "./lambda"
         audio_to_transcribe_lambda = _lambda.Function(
             self, "AudioToTranscribe",
             runtime=_lambda.Runtime.PYTHON_3_9,
-            handler="index.handler",
+            handler="AudioToTranscribe.lambda_handler",
             code=_lambda.Code.from_asset(audio_to_transcribe_code_path),
             role=audio_to_transcribe_role,
             timeout=aws_cdk.Duration.minutes(3)
         )
 
         # Create Lambda function for TranscriptToTxt
-        transcript_to_txt_lambda_code_path = "./lambda/TranscriptToTxt.zip"
+        transcript_to_txt_lambda_code_path = "./lambda"
         transcript_to_txt_lambda = _lambda.Function(
             self, "TranscriptToTxt",
             runtime=_lambda.Runtime.PYTHON_3_9,
-            handler="index.handler",
+            handler="TranscriptToTxt.lambda_handler",
             code=_lambda.Code.from_asset(transcript_to_txt_lambda_code_path),  # Replace with your path
             timeout=aws_cdk.Duration.minutes(3),
             role=transcript_to_txt_role,  # Assign the previously defined IAM role
         )
 
-        medical_bedrock_path = "./lambda/medical-bedrock.zip"
+        medical_bedrock_path = "./lambda"
         medical_bedrock_lambda = _lambda.Function(
             self, "MedicalBedrock",
             runtime=_lambda.Runtime.PYTHON_3_9,
-            handler="index.handler",
+            handler="MedicalBedrock.lambda_handler",
             code=_lambda.Code.from_asset(medical_bedrock_path),  # Replace with your path
             timeout=aws_cdk.Duration.minutes(3),
             role=medical_bedrock_role,  # Assign the previously defined IAM role
@@ -205,7 +207,7 @@ class MedicalAnalysisStack(Stack):
         )
 
         ''''
-        ddb_to_opensearch_path = "./lambda/DDBtoOpensearch.zip"
+        ddb_to_opensearch_path = "./lambda"
         ddb_to_opensearch_lambda = _lambda.Function(
             self, "DDBtoOpensearch",
             runtime=_lambda.Runtime.PYTHON_3_9,
@@ -222,7 +224,10 @@ class MedicalAnalysisStack(Stack):
         )
         '''
         #S3 Event Notifications + DDB Stream
-
+        rawaudio_notice = medicalbucket.add_event_notification(s3.EventType.OBJECT_CREATED, s3n.LambdaDestination(audio_to_transcribe_lambda),s3.NotificationKeyFilter(prefix="audioEMR/raw-audio/"))
+        transcript_to_txt_notice = medicalbucket.add_event_notification(s3.EventType.OBJECT_CREATED, s3n.LambdaDestination(transcript_to_txt_lambda), s3.NotificationKeyFilter(prefix="audioEMR/transcribe-output/"))
+        audio_to_bedrock_notice = medicalbucket.add_event_notification(s3.EventType.OBJECT_CREATED, s3n.LambdaDestination(medical_bedrock_lambda), s3.NotificationKeyFilter(prefix="audioEMR/transcript-txt/"))
+        text_to_bedrock_notice = medicalbucket.add_event_notification(s3.EventType.OBJECT_CREATED, s3n.LambdaDestination(medical_bedrock_lambda), s3.NotificationKeyFilter(prefix="textEMR/"))
 
         #DDB Stream to Put Later
         # ***PUT DDB Stream here
