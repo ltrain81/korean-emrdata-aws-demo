@@ -29,9 +29,9 @@ Claude 모델, 그 중에서도 Haiku 모델은 높은 성능과 매우 빠른 �
 위와 같은 진료기록지는 S3에 저장됨과 동시에 MedicalBedrock 이름의 AWS Lambda 함수로 Bedrock API 호출을 하여 처리 됩니다. 
 실제 처리된 결과는 다음과 같습니다. 
 
-|DiagnosisID|Age|Anatomy|Date|Diagnosis and Conditions|Future Plans|Observations and Findings|Procedures|Summary|Symptoms and Signs|Tests and Examinations|Treatments and Medications|
-|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-|0065b095-e083-4aaf-992e-5523b4f231d1|60|간|2023-10-20|만성 간염 가능성|	추가적인 간 기능 검사 및 바이러스 항원 검사 예정|간기능검사 결과 AST 50 U/L, ALT 45 U/L로 약간 상승, 혈액 내 알부민 3.5 g/dL, 간 초음파 상 간 크기 정상, 간내 담석 의심 없음"||"60세 여성 환자가 최근 3개월 동안 지속적인 피로감, 식욕 부진, 간통, 소화 불량, 체중 감소 증상을 보이고 있습니다. 혈액 검사와 간 초음파 결과 만성 간염 가능성이 있어 추가 검사를 진행할 예정입니다."|"지속적인 피로감, 식욕 부진, 간통, 소화 불량, 체중 감소"|"혈액 검사(간염 검사, 간기능검사, 혈액 내 알부민, 혈액 내 전형적인 전자 수), 간 초음파" |건강한 식습관과 적절한 휴식 유지 권고 |
+|DiagnosisID|Age|Anatomy|Date|Diagnosis and Conditions|Future Plans|Observations and Findings|Symptoms and Signs|Tests and Examinations|Treatments and Medications|Summary|
+|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+|0065b095-e083-4aaf-992e-5523b4f231d1|60|간|2023-10-20|만성 간염 가능성|	추가적인 간 기능 검사 및 바이러스 항원 검사 예정|간기능검사 결과 AST 50 U/L, ALT 45 U/L로 약간 상승, 혈액 내 알부민 3.5 g/dL, 간 초음파 상 간 크기 정상, 간내 담석 의심 없음|지속적인 피로감, 식욕 부진, 간통, 소화 불량, 체중 감소"|"혈액 검사(간염 검사, 간기능검사, 혈액 내 알부민, 혈액 내 전형적인 전자 수), 간 초음파|건강한 식습관과 적절한 휴식 유지 권고 |60세 여성 환자가 최근 3개월 동안 지속적인 피로감, 식욕 부진, 간통, 소화 불량, 체중 감소 증상을 보이고 있습니다. 혈액 검사와 간 초음파 결과 만성 간염 가능성이 있어 추가 검사를 진행할 예정입니다.|
 
 ## Example 2: 피부 관련 진료 기록지 처리 결과 
 
@@ -40,9 +40,9 @@ Claude 모델, 그 중에서도 Haiku 모델은 높은 성능과 매우 빠른 �
 위와 같은 진료기록지 역시 S3에 저장됨과 동시에 MedicalBedrock 이름의 AWS Lambda 함수로 Bedrock API 호출을 하여 처리 됩니다.
 실제 처리 결과는 다음과 같습니다. 
 
-|DiagnosisID|Age|Anatomy|Date|Diagnosis and Conditions|Future Plans|Observations and Findings|Procedures|Summary|Symptoms and Signs|Tests and Examinations|Treatments and Medications|
-|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
-|5fb9aec2-7b48-48bf-894a-fcb8e00e1588|29|"얼굴, 팔"|2023-11-25|피부염(피부 질환)|"피부 상태 지속 관찰, 재방문 시 평가, 필요 시 치료 계획 조정"	얼굴과 팔에 거칠고 붉은 반점|	|"29세 남성 환자가 얼굴과 팔에 가려움증, 통증, 건조한 피부, 붉은 반점 등의 증상을 보여 피부염으로 진단되었습니다. 피부 조직 검사와 알레르기 패치 테스트를 실시하고 보습제, 스테로이드 크림, 영양 보충, 식습관 교정 등의 치료를 받게 됩니다. 향후 피부 상태를 지속적으로 관찰하고 재방문 시 평가하여 필요한 경우 치료 계획을 조정할 예정입니다."|"가려움증, 통증, 건조한 피부, 붉은 반점"|"피부 조직 검사, 알레르기 패치 테스트"|"보습제, 스테로이드 크림, 영양 보충, 식습관 교정"|
+|DiagnosisID|Age|Anatomy|Date|Diagnosis and Conditions|Future Plans|Observations and Findings|Symptoms and Signs|Tests and Examinations|Treatments and Medications|Summary|
+|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+|5fb9aec2-7b48-48bf-894a-fcb8e00e1588|29|"얼굴, 팔"|2023-11-25|피부염(피부 질환)|피부 상태 지속 관찰, 재방문 시 평가, 필요 시 치료 계획 조정 |	얼굴과 팔에 거칠고 붉은 반점|가려움증, 통증, 건조한 피부, 붉은 반점|피부 조직 검사, 알레르기 패치 테스트|보습제, 스테로이드 크림, 영양 보충, 식습관 교정|29세 남성 환자가 얼굴과 팔에 가려움증, 통증, 건조한 피부, 붉은 반점 등의 증상을 보여 피부염으로 진단되었습니다. 피부 조직 검사와 알레르기 패치 테스트를 실시하고 보습제, 스테로이드 크림, 영양 보충, 식습관 교정 등의 치료를 받게 됩니다. 향후 피부 상태를 지속적으로 관찰하고 재방문 시 평가하여 필요한 경우 치료 계획을 조정할 예정입니다.|
 
 본 데모를 배포하시면 원하는 오디오 및 텍스트 파일에 대한 테스트가 가능합니다. 
 
