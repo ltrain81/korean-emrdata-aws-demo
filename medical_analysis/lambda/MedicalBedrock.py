@@ -83,7 +83,7 @@ Here is the clinical note:
         accept='*/*',
         body=json.dumps(body),
         contentType='application/json',
-        modelId='anthropic.claude-3-sonnet-20240229-v1:0'
+        modelId='anthropic.claude-3-haiku-20240307-v1:0'
         )
         
     response_body = json.loads(response.get('body').read())
