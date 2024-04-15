@@ -18,7 +18,7 @@ def lambda_handler(event, context):
     clinical_note = response['Body'].read().decode('utf-8')
     unique_id = str(uuid.uuid4())
     
-    body = json.dumps({"prompt":f"""\n\nHuman: 
+    prompt = f"""\n\nHuman: 
     
 Here is a clinical note written by a doctor in Korean.
 You should analyze the note and give me output as below JSON format. 
@@ -59,28 +59,45 @@ Here is the clinical note:
 
 {clinical_note}
 
-\n\nAssistant:""", "max_tokens_to_sample": 900,
-                       "temperature": 0, "top_p": 1, "top_k": 200, "stop_sequences":  ["\n\nHuman:"],
-                       }, ensure_ascii=False)
- 
+\n\nAssistant:"""
+
+    body = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 1000,
+            "messages": [
+                    {
+                            "content": [
+                                    {
+                                            "text": prompt,
+                                            "type": "text"
+                                    }
+                            ],
+                            "role": "user"
+                    }
+            ],
+            "temperature": 0,
+            "top_p": 0
+    }
+
     response = bedrock.invoke_model(
         accept='*/*',
-        body=body,
+        body=json.dumps(body),
         contentType='application/json',
-        modelId='anthropic.claude-v2'
+        modelId='anthropic.claude-3-sonnet-20240229-v1:0'
         )
-    
+        
     response_body = json.loads(response.get('body').read())
-    answer = response_body['completion']
+    answer = response_body['content'][0]['text']
+    print(answer)
     start_index = answer.find("{")
 
     analysis = json.loads(answer[start_index:])
-    
+
     analysis["DiagnosisID"] = unique_id
-    
+
     medical_table.put_item(Item=analysis)
     print("Note analyzed and added to table successfully")
-    
+
     return {
         'statusCode': 200,
         'body': json.dumps('Hello from Lambda!')

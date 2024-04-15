@@ -11,7 +11,7 @@
 이를 통해 사용자는 기존에 처리하기 어려웠던 복잡한 의료 데이터가 AI를 통해 자동으로 정형화 작업이 되는 것을 확인할 수 있습니다. 
 
 
-## Architecutre
+## Architecture
 
 ![Image (6)](https://github.com/ltrain81/korean-emrdata-aws-demo/assets/63511851/2bb6a178-b48e-4043-92a6-30373e25a34f)
 
